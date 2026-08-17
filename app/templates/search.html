@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+{% block title %}Suchen · Kalorien{% endblock %}
+
+{% block body %}
+<header class="top">
+  <h1>Suchen</h1>
+  <div class="datum-nav"><a href="/tag/{{ day }}">Zurück zum Tag</a></div>
+</header>
+
+<form class="suchzeile" method="get" action="/suchen">
+  <input type="hidden" name="day" value="{{ day }}">
+  <input type="search" name="q" value="{{ q }}" placeholder="Lebensmittel suchen"
+         autocomplete="off" autofocus>
+  <select name="meal" style="max-width:9rem">
+    {% for key, label in meals %}
+    <option value="{{ key }}" {% if key == meal %}selected{% endif %}>{{ label }}</option>
+    {% endfor %}
+  </select>
+  <button class="btn primaer">Los</button>
+</form>
+
+{% if recent %}
+<div class="mahlzeit-kopf"><h2>Zuletzt gegessen</h2></div>
+{% for r in recent %}
+<details class="treffer">
+  <summary>
+    <span class="titel">
+      <b>{{ r.name }}</b>
+      <small>{{ r.amount_g|round|int }} g · {{ r.kcal|round|int }} kcal · {{ r.n }}×</small>
+    </span>
+    <span class="energie">+</span>
+  </summary>
+  <div class="treffer-body">
+    <form method="post" action="/api/log">
+      <input type="hidden" name="name" value="{{ r.name }}">
+      <input type="hidden" name="brand" value="{{ r.brand or '' }}">
+      <input type="hidden" name="amount_g" value="{{ r.amount_g }}">
+      <input type="hidden" name="kcal" value="{{ r.kcal }}">
+      <input type="hidden" name="protein" value="{{ r.protein }}">
+      <input type="hidden" name="carbs" value="{{ r.carbs }}">
+      <input type="hidden" name="fat" value="{{ r.fat }}">
+      <input type="hidden" name="food_id" value="{{ r.food_id or '' }}">
+      <input type="hidden" name="input" value="repeat">
+      <input type="hidden" name="meal" value="{{ meal }}">
+      <input type="hidden" name="day" value="{{ day }}">
+      <input type="hidden" name="redirect" value="/tag/{{ day }}">
+      <button class="btn primaer voll">Genauso nochmal eintragen</button>
+    </form>
+  </div>
+</details>
+{% endfor %}
+{% endif %}
+
+{% if q %}
+<div class="mahlzeit-kopf">
+  <h2>{{ results|length }} Treffer</h2>
+  <a class="kcal" href="/neu?name={{ q }}&meal={{ meal }}&day={{ day }}">Selbst anlegen</a>
+</div>
+{% endif %}
+
+{% for f in results %}
+<details class="treffer" id="food-{{ f.id }}" data-kcal="{{ f.kcal_100 }}"
+         data-p="{{ f.protein_100 }}" data-c="{{ f.carbs_100 }}" data-f="{{ f.fat_100 }}">
+  <summary>
+    <span class="titel">
+      <b>{{ f.name }}</b>
+      <small>
+        {% if f.brand %}{{ f.brand }} · {% endif %}
+        {{ f.kcal_100|round|int }} kcal / 100 {{ 'ml' if f.is_liquid else 'g' }}
+      </small>
+    </span>
+    <span class="energie">{{ f.protein_100|round|int }}E {{ f.carbs_100|round|int }}K {{ f.fat_100|round|int }}F</span>
+  </summary>
+
+  <div class="treffer-body">
+    {% if f.suspect %}
+    <div class="warnung">
+      Die Nährwerte wirken unplausibel (typischer Fehler in Open Food Facts:
+      kJ statt kcal). Bitte am Etikett prüfen.
+    </div>
+    {% endif %}
+
+    <form method="post" action="/api/log">
+      <input type="hidden" name="food_id" value="{{ f.id }}">
+      <input type="hidden" name="meal" value="{{ meal }}">
+      <input type="hidden" name="day" value="{{ day }}">
+      <input type="hidden" name="input" value="search">
+      <input type="hidden" name="confidence" value="{{ 'exact' if f.source != 'base' else 'estimated' }}">
+      <input type="hidden" name="redirect" value="/tag/{{ day }}">
+
+      <label for="menge-{{ f.id }}">Menge in {{ 'ml' if f.is_liquid else 'Gramm' }}</label>
+      <div class="reihe">
+        <input type="number" id="menge-{{ f.id }}" name="amount_g" class="menge"
+               value="{{ f.default_g|round|int }}" min="1" max="5000" step="1" inputmode="numeric">
+        <button class="btn primaer" style="flex:0 0 auto">Eintragen</button>
+      </div>
+
+      {% if f.portions %}
+      <div class="portionen">
+        {% for p in f.portions %}
+        <button type="button" data-g="{{ p.grams }}">{{ p.label }} · {{ p.grams|round|int }} g</button>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <p class="vorschau"><b class="v-kcal">–</b> kcal ·
+        <span class="v-makros">–</span></p>
+    </form>
+  </div>
+</details>
+{% else %}
+{% if q %}
+<p class="leer">
+  Nichts gefunden.
+  <a href="/neu?name={{ q }}&meal={{ meal }}&day={{ day }}">Lebensmittel selbst anlegen</a>
+</p>
+{% endif %}
+{% endfor %}
+{% endblock %}
+
+{% block skript %}
+<script>
+// Live-Vorschau: Menge ändern -> Nährwerte hochrechnen.
+document.querySelectorAll('.treffer[data-kcal]').forEach(function (box) {
+  var per100 = {
+    kcal: parseFloat(box.dataset.kcal) || 0,
+    p: parseFloat(box.dataset.p) || 0,
+    c: parseFloat(box.dataset.c) || 0,
+    f: parseFloat(box.dataset.f) || 0
+  };
+  var feld = box.querySelector('.menge');
+  var kcalOut = box.querySelector('.v-kcal');
+  var makroOut = box.querySelector('.v-makros');
+  if (!feld) return;
+
+  function neu() {
+    var g = parseFloat(feld.value) || 0;
+    var k = g / 100;
+    kcalOut.textContent = Math.round(per100.kcal * k);
+    makroOut.textContent =
+      Math.round(per100.p * k) + ' g Eiweiß · ' +
+      Math.round(per100.c * k) + ' g KH · ' +
+      Math.round(per100.f * k) + ' g Fett';
+  }
+
+  feld.addEventListener('input', neu);
+  box.querySelectorAll('.portionen button').forEach(function (b) {
+    b.addEventListener('click', function () { feld.value = b.dataset.g; neu(); });
+  });
+  neu();
+});
+</script>
+{% endblock %}

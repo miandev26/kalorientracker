@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Einstellungen · Kalorien{% endblock %}
+
+{% block body %}
+<header class="top">
+  <h1>Einstellungen</h1>
+  <div class="datum-nav"><a href="/">Zurück zu heute</a></div>
+</header>
+
+<form method="post" action="/einstellungen">
+  <label for="kcal_target">Tagesziel Kalorien</label>
+  <input type="number" id="kcal_target" name="kcal_target" value="{{ target }}"
+         min="800" max="6000" step="10" inputmode="numeric">
+
+  <label for="protein_target">Tagesziel Eiweiß (g)</label>
+  <input type="number" id="protein_target" name="protein_target" value="{{ protein_target }}"
+         min="0" max="400" step="5" inputmode="numeric">
+
+  <button class="btn primaer voll" style="margin-top:1rem">Speichern</button>
+</form>
+
+<section class="mahlzeit">
+  <div class="mahlzeit-kopf"><h2>Katalog</h2></div>
+  <table class="daten">
+    {% for c in counts %}
+    <tr>
+      <td>{{ {'off':'Open Food Facts','base':'Grundnahrungsmittel','custom':'Selbst angelegt'}.get(c.source, c.source) }}</td>
+      <td class="z">{{ "{:,}".format(c.n).replace(",", ".") }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  <p class="leer">
+    OFF-Abfrage im Netz beim Scannen: {{ 'aktiv' if off_online else 'aus' }}.
+    Der Import des vollständigen Dumps läuft über
+    <code style="font-family:var(--mono);font-size:.8rem">scripts/import_off.py</code>.
+  </p>
+</section>
+{% endblock %}

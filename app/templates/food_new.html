@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}Lebensmittel anlegen · Kalorien{% endblock %}
+
+{% block body %}
+<header class="top">
+  <h1>Anlegen</h1>
+  <div class="datum-nav"><a href="/tag/{{ day }}">Zurück zum Tag</a></div>
+</header>
+
+<p style="color:var(--schrift-mut);font-size:.88rem;margin:.4rem 0 0">
+  Werte pro 100 g bzw. 100 ml – so wie sie auf der Nährwerttabelle stehen.
+  {% if ean %}Der Barcode <b style="font-family:var(--mono)">{{ ean }}</b> wird
+  mitgespeichert, beim nächsten Scan ist das Produkt sofort da.{% endif %}
+</p>
+
+<form method="post" action="/neu">
+  <input type="hidden" name="ean" value="{{ ean }}">
+  <input type="hidden" name="meal" value="{{ meal }}">
+  <input type="hidden" name="day" value="{{ day }}">
+
+  <label for="name">Name</label>
+  <input type="text" id="name" name="name" value="{{ name }}" required
+         placeholder="z. B. Käsekrainer">
+
+  <label for="brand">Marke (optional)</label>
+  <input type="text" id="brand" name="brand" placeholder="z. B. Berger">
+
+  <label for="kcal_100">Kalorien pro 100 g/ml</label>
+  <input type="number" id="kcal_100" name="kcal_100" step="0.1" min="0" max="900"
+         inputmode="decimal" required>
+
+  <div class="reihe">
+    <div>
+      <label for="protein_100">Eiweiß (g)</label>
+      <input type="number" id="protein_100" name="protein_100" step="0.1" min="0" value="0" inputmode="decimal">
+    </div>
+    <div>
+      <label for="carbs_100">Kohlenhydrate (g)</label>
+      <input type="number" id="carbs_100" name="carbs_100" step="0.1" min="0" value="0" inputmode="decimal">
+    </div>
+    <div>
+      <label for="fat_100">Fett (g)</label>
+      <input type="number" id="fat_100" name="fat_100" step="0.1" min="0" value="0" inputmode="decimal">
+    </div>
+  </div>
+
+  <div class="reihe">
+    <div>
+      <label for="default_g">Übliche Portion (g)</label>
+      <input type="number" id="default_g" name="default_g" step="1" min="1" value="100" inputmode="numeric">
+    </div>
+    <div>
+      <label for="is_liquid">Form</label>
+      <select id="is_liquid" name="is_liquid">
+        <option value="0">Fest (g)</option>
+        <option value="1">Flüssig (ml)</option>
+      </select>
+    </div>
+  </div>
+
+  <p class="vorschau" id="check" style="min-height:1.4em"></p>
+
+  <button class="btn primaer voll" style="margin-top:.8rem">Speichern</button>
+</form>
+{% endblock %}
+
+{% block skript %}
+<script>
+// Gegenrechnung: passen die Makros zur angegebenen Energie?
+var felder = ['kcal_100', 'protein_100', 'carbs_100', 'fat_100'].map(function (id) {
+  return document.getElementById(id);
+});
+var check = document.getElementById('check');
+
+function pruefen() {
+  var kcal = parseFloat(felder[0].value) || 0;
+  var p = parseFloat(felder[1].value) || 0;
+  var c = parseFloat(felder[2].value) || 0;
+  var f = parseFloat(felder[3].value) || 0;
+  if (!kcal || (!p && !c && !f)) { check.textContent = ''; return; }
+  var berechnet = p * 4 + c * 4 + f * 9;
+  var abw = Math.abs(berechnet - kcal) / kcal;
+  if (abw > 0.25) {
+    check.innerHTML = '<span style="color:var(--amber)">Aus den Makros ergeben sich ' +
+      Math.round(berechnet) + ' kcal, angegeben sind ' + Math.round(kcal) +
+      '. Bitte nochmal aufs Etikett schauen.</span>';
+  } else {
+    check.innerHTML = 'Makros und Energie passen zusammen (' + Math.round(berechnet) + ' kcal gerechnet).';
+  }
+}
+felder.forEach(function (el) { el.addEventListener('input', pruefen); });
+</script>
+{% endblock %}

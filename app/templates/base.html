@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>{% block title %}Kalorien{% endblock %}</title>
+  <meta name="theme-color" content="#14181C">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="/static/manifest.json">
+  <link rel="icon" href="/static/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/static/icon.svg">
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+  <div class="wrap">
+    {% block body %}{% endblock %}
+  </div>
+
+  {% block leiste %}
+  <nav class="leiste">
+    <div class="inner">
+      <a class="btn primaer" href="/scannen{% if day %}?day={{ day }}{% endif %}">Scannen</a>
+      <a class="btn" href="/suchen{% if day %}?day={{ day }}{% endif %}">Suchen</a>
+      <a class="btn" href="/statistik">Statistik</a>
+    </div>
+  </nav>
+  {% endblock %}
+
+  {% block skript %}{% endblock %}
+</body>
+</html>

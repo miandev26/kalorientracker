@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Scannen · Kalorien{% endblock %}
+
+{% block body %}
+<header class="top">
+  <h1>Scannen</h1>
+  <div class="datum-nav"><a href="/tag/{{ day }}">Zurück zum Tag</a></div>
+</header>
+
+<div class="reihe">
+  <select id="mahlzeit">
+    {% for key, label in meals %}
+    <option value="{{ key }}" {% if key == meal %}selected{% endif %}>{{ label }}</option>
+    {% endfor %}
+  </select>
+  <button class="btn" id="kamera-an" style="flex:0 0 auto">Kamera starten</button>
+</div>
+
+<div id="video-box" hidden>
+  <video id="video" playsinline muted></video>
+  <div class="visier"></div>
+</div>
+
+<p class="status" id="status">Kamera starten und den Strichcode ins Visier halten.</p>
+
+<div id="ergebnis"></div>
+
+<details style="margin-top:1.2rem">
+  <summary style="cursor:pointer;color:var(--schrift-mut);font-size:.85rem">
+    Barcode von Hand eingeben
+  </summary>
+  <div style="margin-top:.6rem">
+    <div class="reihe">
+      <input type="text" id="ean-manuell" inputmode="numeric" placeholder="z. B. 9002859061707">
+      <button class="btn" id="ean-suchen" style="flex:0 0 auto">Suchen</button>
+    </div>
+  </div>
+</details>
+
+<p style="margin-top:1.5rem">
+  <a class="zurueck" href="/suchen?meal={{ meal }}&day={{ day }}">
+    Kein Barcode? Im Katalog suchen
+  </a>
+</p>
+{% endblock %}
+
+{% block skript %}
+<script>window.KCAL_TAG = "{{ day }}";</script>
+<script src="/static/vendor/zxing.min.js"></script>
+<script src="/static/scanner.js"></script>
+{% endblock %}

@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Statistik · Kalorien{% endblock %}
+
+{% block body %}
+<header class="top">
+  <h1>Statistik</h1>
+  <div class="datum-nav">
+    <a href="/statistik?days=7" {% if days == 7 %}class="heute"{% endif %}>7</a>
+    <a href="/statistik?days=30" {% if days == 30 %}class="heute"{% endif %}>30</a>
+    <a href="/statistik?days=90" {% if days == 90 %}class="heute"{% endif %}>90</a>
+  </div>
+</header>
+
+<section class="lcd">
+  <div class="lcd-oben">
+    <span>Schnitt {{ rows|length }} Tage</span>
+    <span>Ziel {{ target|round|int }}</span>
+  </div>
+  <div class="lcd-zahl {% if avg > target %}ueber{% endif %}">{{ avg }}<small>KCAL / TAG</small></div>
+</section>
+
+{% if by_input %}
+<section class="mahlzeit">
+  <div class="mahlzeit-kopf"><h2>Woher die Kalorien kommen</h2></div>
+  <table class="daten">
+    <tr><th>Eingabe</th><th style="text-align:right">Einträge</th><th style="text-align:right">Anteil</th></tr>
+    {% for b in by_input %}
+    <tr>
+      <td>{{ {'barcode':'Barcode gescannt','search':'Katalog gesucht','manual':'Von Hand','repeat':'Wiederholt'}.get(b.input, b.input) }}</td>
+      <td class="z">{{ b.n }}</td>
+      <td class="z">{{ (b.kcal / total_kcal * 100)|round|int }} %</td>
+    </tr>
+    {% endfor %}
+  </table>
+</section>
+{% endif %}
+
+<section class="mahlzeit">
+  <div class="mahlzeit-kopf"><h2>Tagesverlauf</h2></div>
+  {% for r in rows %}
+  <div class="balken">
+    <span class="tag">{{ r.day[8:10] }}.{{ r.day[5:7] }}.</span>
+    <span class="spur">
+      <span class="fuell {% if r.kcal > target %}ueber{% endif %}"
+            style="width: {{ (r.kcal / max_kcal * 100)|round|int }}%"></span>
+    </span>
+    <span class="wert">{{ r.kcal|round|int }}</span>
+  </div>
+  {% else %}
+  <p class="leer">Noch keine Einträge in diesem Zeitraum.</p>
+  {% endfor %}
+</section>
+
+<p style="margin-top:1.5rem"><a class="zurueck" href="/">Zurück zu heute</a></p>
+{% endblock %}

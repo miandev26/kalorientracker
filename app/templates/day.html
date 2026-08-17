@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}{{ day_label }} · Kalorien{% endblock %}
+
+{% block body %}
+<header class="top">
+  <h1>Kalorien</h1>
+  <div class="datum-nav">
+    <a href="/tag/{{ prev_day }}" aria-label="Vorheriger Tag">‹</a>
+    <span class="heute">{{ day_label }}</span>
+    {% if not is_today %}<a href="/tag/{{ next_day }}" aria-label="Nächster Tag">›</a>
+    {% else %}<span style="opacity:.3">›</span>{% endif %}
+  </div>
+</header>
+
+<section class="lcd">
+  <div class="lcd-oben">
+    <span>{% if remaining >= 0 %}Noch frei{% else %}Über Ziel{% endif %}</span>
+    <span>{{ summary.kcal|round|int }} / {{ target|round|int }} kcal</span>
+  </div>
+
+  <div class="lcd-zahl {% if remaining < 0 %}ueber{% endif %}">
+    {{ remaining|abs }}<small>KCAL</small>
+  </div>
+
+  <div class="segmente" aria-hidden="true">
+    {% for i in range(20) %}
+      <i class="{% if pct >= (i+1)*5 %}{% if remaining < 0 %}ueber{% else %}an{% endif %}{% endif %}"></i>
+    {% endfor %}
+  </div>
+
+  <div class="lcd-makros">
+    <span>Eiweiß <b>{{ summary.protein|round|int }} g</b> / {{ protein_target|round|int }}</span>
+    <span>KH <b>{{ summary.carbs|round|int }} g</b></span>
+    <span>Fett <b>{{ summary.fat|round|int }} g</b></span>
+  </div>
+
+  {% if summary.est_kcal > 0 %}
+  <div class="hinweis-est">
+    {{ (summary.est_kcal / summary.kcal * 100)|round|int }} % der Kalorien sind geschätzt,
+    nicht vom Etikett.
+  </div>
+  {% endif %}
+</section>
+
+{% for key, label in meals %}
+{% set eintraege = by_meal.get(key, []) %}
+<section class="mahlzeit">
+  <div class="mahlzeit-kopf">
+    <h2>{{ label }}</h2>
+    <span class="kcal">{{ eintraege|sum(attribute='kcal')|round|int }} kcal</span>
+  </div>
+
+  {% for e in eintraege %}
+  <div class="eintrag">
+    <div class="text">
+      <span class="name">
+        {{ e.name }}{% if e.brand %} <span class="marke">{{ e.brand }}</span>{% endif %}
+        {% if e.confidence == 'estimated' %}<span class="marke est">geschätzt</span>{% endif %}
+      </span>
+      <span class="meta">{{ e.amount_g|round|int }} g · {{ e.protein|round|int }} E / {{ e.carbs|round|int }} K / {{ e.fat|round|int }} F</span>
+    </div>
+    <span class="zahl">{{ e.kcal|round|int }}</span>
+    <form method="post" action="/api/log/{{ e.id }}/loeschen">
+      <input type="hidden" name="redirect" value="/tag/{{ day }}">
+      <button class="weg" title="Eintrag löschen" aria-label="{{ e.name }} löschen">×</button>
+    </form>
+  </div>
+  {% else %}
+  <p class="leer">
+    Noch nichts.
+    <a href="/scannen?meal={{ key }}&day={{ day }}">Scannen</a> oder
+    <a href="/suchen?meal={{ key }}&day={{ day }}">suchen</a>.
+  </p>
+  {% endfor %}
+</section>
+{% endfor %}
+
+<p style="margin:2rem 0 0"><a class="zurueck" href="/einstellungen">Einstellungen</a></p>
+{% endblock %}

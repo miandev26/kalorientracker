@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">
+  <rect width="192" height="192" rx="34" fill="#14181C"/>
+  <rect x="26" y="46" width="140" height="76" rx="9" fill="#B9C9A6"/>
+  <text x="96" y="102" font-family="ui-monospace,monospace" font-size="42"
+        font-weight="700" fill="#1E2A18" text-anchor="middle">kcal</text>
+  <rect x="26" y="136" width="30" height="12" rx="3" fill="#E8A33D"/>
+  <rect x="64" y="136" width="30" height="12" rx="3" fill="#2A323B"/>
+  <rect x="102" y="136" width="30" height="12" rx="3" fill="#2A323B"/>
+  <rect x="140" y="136" width="26" height="12" rx="3" fill="#2A323B"/>
+</svg>
